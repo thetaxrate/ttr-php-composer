@@ -1,0 +1,28 @@
+{
+  "name": "thetaxrate/ttr-php-composer",
+  "type": "library",
+  "description": "Simple Sales Tax Rate API",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "keywords": ["Sales Tax","Tax Rate","Tax Api","Sales Tax Rate"],
+  "homepage": "https://www.thetaxrate.com",
+  "authors": [
+    {
+      "name": "Zarware",
+      "email": "admin@thetaxrate.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "TheTaxRate\\SalesTaxProvider\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  }
+}
