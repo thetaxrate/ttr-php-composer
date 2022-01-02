@@ -1,6 +1,6 @@
 <?php
 
-namespace TheTaxRate\SalesTaxProvider\Response;
+namespace TheTaxRate\Response;
 
 class TaxRateResponse
 {

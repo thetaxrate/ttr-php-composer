@@ -1,9 +1,17 @@
 <?php
 
-namespace TheTaxRate\SalesTaxProvider;
+namespace TheTaxRate;
+
 
 use GuzzleHttp\Client;
-use TheTaxRate\SalesTaxProvider\Response\TaxRateResponse;
+use TheTaxRate\Exceptions\ApiLimitException;
+use TheTaxRate\Exceptions\BadRequestException;
+use TheTaxRate\Exceptions\ForbiddenException;
+use TheTaxRate\Exceptions\MissingTokenException;
+use TheTaxRate\Exceptions\MissingZipCodeException;
+use TheTaxRate\Exceptions\ServerLevelException;
+use TheTaxRate\Exceptions\UnAuthorizedException;
+use TheTaxRate\Response\TaxRateResponse;
 
 final class SalesTaxService
 {
@@ -19,25 +27,45 @@ final class SalesTaxService
     /**
      * Token for communication with the API
      * @param $apiToken
+     * @throws MissingTokenException
      */
     public function __construct($apiToken)
     {
+        if(is_null($apiToken))throw new MissingTokenException();
         $this->_apiToken = $apiToken;
         $this->_apiPath = sprintf($this->_apiPath,$this->_version);
     }
 
     /**
-     * Get sale tax response for zip code
+     *  Get sale tax response for zip code
+     * @param $zipCode
+     * @return TaxRateResponse
+     * @throws ApiLimitException
+     * @throws BadRequestException
+     * @throws ForbiddenException
+     * @throws MissingZipCodeException
+     * @throws ServerLevelException
+     * @throws UnAuthorizedException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function getTaxRate($zipCode)
+    : TaxRateResponse
     {
-        $response = $this->sendTaxRateRequest($zipCode);
-        if(in_array($response->getStatusCode(),[200,201]))
+        if(is_null($zipCode))throw new MissingZipCodeException();
+        try
         {
-            return new TaxRateResponse($response->getBody()->getContents());
+            $response = $this->sendTaxRateRequest($zipCode);
+            if (in_array($response->getStatusCode(), [200, 201]))
+            {
+                return new TaxRateResponse($response->getBody()->getContents());
+            }
+            return new TaxRateResponse();
         }
-        return new TaxRateResponse();
+        catch (\GuzzleHttp\Exception\GuzzleException $ex)
+        {
+            $this->processException($ex);
+            throw $ex;
+        }
     }
 
     /**
@@ -48,8 +76,8 @@ final class SalesTaxService
     {
         return $this->getHttpClient()
             ->request('GET', $this->_baseUrl.$this->_apiPath.$zipCode, [
-            'headers' => $this->getRequestHeaders()
-        ]);
+                'headers' => $this->getRequestHeaders()
+            ]);
     }
 
 
@@ -72,6 +100,37 @@ final class SalesTaxService
             'Authorization' => 'Bearer ' . $this->_apiToken,
             'Accept'        => 'application/json',
         ];
+    }
+
+    /**
+     * @param $ex
+     * @return void
+     * @throws ApiLimitException
+     * @throws BadRequestException
+     * @throws ForbiddenException
+     * @throws ServerLevelException
+     * @throws UnAuthorizedException
+     */
+    private function processException($ex)
+    : void
+    {
+        switch ($ex->getCode()) {
+            case 400: //Bad Request
+                throw new BadRequestException($ex->getMessage());
+                break;
+            case 401:
+                throw new UnAuthorizedException($ex->getMessage());
+                break;
+            case 429: //To Many
+                throw new ApiLimitException($ex->getMessage());
+                break;
+            case 403: //Forbidden
+                throw new ForbiddenException($ex->getMessage());
+                break;
+            case 500: //Error
+                throw new ServerLevelException($ex->getMessage());
+                break;
+        }
     }
 
 }
