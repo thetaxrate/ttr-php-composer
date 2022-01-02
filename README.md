@@ -11,6 +11,8 @@ $ composer require thetaxrate/ttr-php-composer
 
 ## Usage
 
+Latest Documentation Can be found at [Site Documentation](https://thetaxrate.com/documentations/php-composer)
+
 You will need to Obtain an API token from thetaxrate.com users portal.
 
 ```php
